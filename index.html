@@ -393,7 +393,7 @@ button:disabled {
   </div>
 
   <div class="help">
-    Cliquer sur un premier point pour définir le point de calcul (PT1). Cliquer sur un second point pour définir l'antenne (PT2). Le segment est analysé dans le sens PT2 vers PT1. Le cercle est centré sur le dernier point cliqué.
+    Cliquer sur un premier point pour définir le point de calcul (PT1). Cliquer sur un second point pour définir l'antenne (PT2). Le segment est analysé dans le sens PT2 vers PT1. Le cercle est centré sur le Point 2 lorsque l'antenne est définie ; sinon il est centré sur le dernier point cliqué.
   </div>
 
   <div class="note">
@@ -1032,11 +1032,19 @@ function getCircleDisplaySource() {
     return null;
   }
 
-  if (point2 && sameCoords(circleInfo, point2)) {
+  if (circleInfo.source === "point2" && point2) {
     return point2;
   }
 
-  if (point1 && sameCoords(circleInfo, point1)) {
+  if (circleInfo.source === "point1" && point1) {
+    return point1;
+  }
+
+  if (point2 && sameCoords(circleInfo, point2, 1e-7)) {
+    return point2;
+  }
+
+  if (point1 && sameCoords(circleInfo, point1, 1e-7)) {
     return point1;
   }
 
@@ -1218,14 +1226,32 @@ function fetchCircleAltitudeIfNeeded() {
     return;
   }
 
-  if (point2 && sameCoords(circleInfo, point2)) {
-    circleInfo.source = "point2";
+  if (circleInfo.source === "point2" && point2) {
+    circleInfo.altitude = point2.altitude;
+    circleInfo.altitudeStatus = point2.altitudeStatus;
     updateInfoCards();
     return;
   }
 
-  if (point1 && sameCoords(circleInfo, point1)) {
+  if (circleInfo.source === "point1" && point1) {
+    circleInfo.altitude = point1.altitude;
+    circleInfo.altitudeStatus = point1.altitudeStatus;
+    updateInfoCards();
+    return;
+  }
+
+  if (point2 && sameCoords(circleInfo, point2, 1e-7)) {
+    circleInfo.source = "point2";
+    circleInfo.altitude = point2.altitude;
+    circleInfo.altitudeStatus = point2.altitudeStatus;
+    updateInfoCards();
+    return;
+  }
+
+  if (point1 && sameCoords(circleInfo, point1, 1e-7)) {
     circleInfo.source = "point1";
+    circleInfo.altitude = point1.altitude;
+    circleInfo.altitudeStatus = point1.altitudeStatus;
     updateInfoCards();
     return;
   }
@@ -1564,14 +1590,31 @@ async function drawCircle() {
     return;
   }
 
+  const circleCenter = point2 || point1 || lastClickedLatLng;
+  let circleSource = "self";
+
+  if (point2) {
+    circleSource = "point2";
+  } else if (point1) {
+    circleSource = "point1";
+  }
+
   circleInfo = {
-    lat: Number(lastClickedLatLng.lat),
-    lng: Number(lastClickedLatLng.lng),
+    lat: Number(circleCenter.lat),
+    lng: Number(circleCenter.lng),
     radius: Number(radius),
-    altitude: null,
-    altitudeStatus: "pending",
+    altitude: circleSource === "point2" && point2
+      ? point2.altitude
+      : circleSource === "point1" && point1
+        ? point1.altitude
+        : null,
+    altitudeStatus: circleSource === "point2" && point2
+      ? point2.altitudeStatus
+      : circleSource === "point1" && point1
+        ? point1.altitudeStatus
+        : "pending",
     token: null,
-    source: null
+    source: circleSource
   };
 
   circleGeoJSON = createGeoJSONCircle(circleInfo, radius);
