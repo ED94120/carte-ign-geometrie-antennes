@@ -27,6 +27,18 @@ body {
   color: #222;
 }
 
+.input-cell {
+  border: 2px solid #cc0000 !important;
+  background: #fff8f8;
+  box-sizing: border-box;
+}
+
+.antenna-field input.input-cell:disabled {
+  background: #f3f3f3;
+  color: #444;
+  border: 2px solid #cc0000 !important;
+}
+
 .page {
   max-width: 1400px;
   margin: 0 auto;
@@ -83,6 +95,44 @@ button:disabled {
   width: 18px;
   height: 18px;
   margin: 0;
+}
+
+.inline-status {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  color: #003366;
+  padding: 0 6px;
+}
+
+.inline-status.loading::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  margin-right: 7px;
+  border: 2px solid #b7c7dd;
+  border-top-color: #003366;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.inline-status.ok {
+  color: #0a7a1f;
+}
+
+.inline-status.warn {
+  color: #b36b00;
+}
+
+.inline-status.err {
+  color: #b00020;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .antenna-box {
@@ -199,7 +249,7 @@ button:disabled {
 
 .info-card {
   background: #ffffff;
-  border: 1px solid #cccccc;
+  border: 2px solid #003366;
   padding: 12px;
   min-height: 200px;
 }
@@ -274,8 +324,8 @@ button:disabled {
 <div class="page">
 
   <div class="toolbar">
-    <input type="text" id="adresse" placeholder="Saisir une adresse">
-    <button id="btnCarte" type="button">Carte</button>
+    <input type="text" id="adresse" placeholder="Saisir une adresse pour centrer la carte">
+    <button id="btnCarte" type="button">Rechercher / centrer</button>
 
     <input type="text" id="rayon" placeholder="Rayon en m">
     <button id="btnCercle" type="button">Cercle</button>
@@ -289,6 +339,7 @@ button:disabled {
       <input type="checkbox" id="chkEtablissements">
       <span>Repérage des établissements particuliers</span>
     </label>
+    <span id="etablissementsStatus" class="inline-status"></span>
   </div>
 
   <div class="antenna-box">
@@ -495,11 +546,21 @@ let antennasVisible = false;
 let latestDefaultAnfrName = "";
 let latestDefaultAnfrUrl = "";
 
+let addressSearchTimer = null;
+let addressSearchToken = 0;
+const ADDRESS_AUTOCOMPLETE_DELAY_MS = 700;
+const MIN_ADDRESS_LENGTH = 6;
+
+const OVERPASS_API_URL = "https://overpass-api.de/api/interpreter";
+const MAX_ETABLISSEMENTS_BBOX_AREA = 0.35;
+const OVERPASS_TIMEOUT_SECONDS = 25;
+
 const adresseInput = document.getElementById("adresse");
 const rayonInput = document.getElementById("rayon");
 const statusEl = document.getElementById("status");
 const resultatsAdressesEl = document.getElementById("resultatsAdresses");
 const chkEtablissements = document.getElementById("chkEtablissements");
+const etablissementsStatusEl = document.getElementById("etablissementsStatus");
 const btnCartoradio = document.getElementById("btnCartoradio");
 const btnAntennes = document.getElementById("btnAntennes");
 
@@ -540,6 +601,16 @@ const circleRadiusEl = document.getElementById("circleRadius");
 
 function setStatus(message) {
   statusEl.textContent = message;
+}
+
+function setEtablissementsStatus(message, state = "") {
+  etablissementsStatusEl.className = "inline-status";
+
+  if (state) {
+    etablissementsStatusEl.classList.add(state);
+  }
+
+  etablissementsStatusEl.textContent = message;
 }
 
 function updateCartoradioButtonState() {
@@ -1312,6 +1383,18 @@ function ensureCanvasMarkerImage(imageId, fillColor) {
   }
 }
 
+function bringEtablissementsLayerToFront() {
+  if (!map.getLayer(ETAB_LAYER_ID)) {
+    return;
+  }
+
+  try {
+    map.moveLayer(ETAB_LAYER_ID);
+  } catch (e) {
+    console.warn("Impossible de replacer la couche établissements au premier plan.", e);
+  }
+}
+
 async function refreshVisualLayers() {
   if (!map.isStyleLoaded()) {
     return;
@@ -1366,6 +1449,7 @@ async function refreshVisualLayers() {
       "visibility",
       chkEtablissements.checked ? "visible" : "none"
     );
+    bringEtablissementsLayerToFront();
   }
 }
 
@@ -1548,6 +1632,7 @@ function showAddressResults(features, fallbackLabel) {
 
 async function geocodeAddress() {
   const address = adresseInput.value.trim();
+  const currentToken = ++addressSearchToken;
 
   if (address === "") {
     clearAddressResults();
@@ -1555,6 +1640,12 @@ async function geocodeAddress() {
     addressLabel = "";
     await refreshVisualLayers();
     setStatus("Veuillez saisir une adresse.");
+    return;
+  }
+
+  if (address.length < MIN_ADDRESS_LENGTH) {
+    clearAddressResults();
+    setStatus("Adresse trop courte pour lancer la recherche.");
     return;
   }
 
@@ -1573,11 +1664,19 @@ async function geocodeAddress() {
       }
     });
 
+    if (currentToken !== addressSearchToken) {
+      return;
+    }
+
     if (!response.ok) {
       throw new Error("Erreur HTTP");
     }
 
     const data = await response.json();
+
+    if (currentToken !== addressSearchToken) {
+      return;
+    }
 
     if (!data.features || data.features.length === 0) {
       clearAddressResults();
@@ -1596,6 +1695,10 @@ async function geocodeAddress() {
     showAddressResults(data.features, address);
     setStatus("Plusieurs résultats trouvés. Veuillez choisir une adresse.");
   } catch (error) {
+    if (currentToken !== addressSearchToken) {
+      return;
+    }
+
     clearAddressResults();
     addressPoint = null;
     addressLabel = "";
@@ -1605,13 +1708,13 @@ async function geocodeAddress() {
 }
 
 function getAmenityLabel(tags) {
-  if (tags.amenity === "kindergarten") return "Crèche";
-  if (tags.amenity === "school") return "Établissement scolaire";
-  if (tags.amenity === "college") return "Établissement scolaire";
-  if (tags.amenity === "hospital") return "Établissement de soins";
-  if (tags.amenity === "clinic") return "Établissement de soins";
-  if (tags.healthcare === "hospital") return "Établissement de soins";
-  if (tags.healthcare === "clinic") return "Établissement de soins";
+  const amenity = tags.amenity || "";
+  const healthcare = tags.healthcare || "";
+
+  if (amenity === "kindergarten" || amenity === "childcare") return "Crèche";
+  if (amenity === "school" || amenity === "college" || amenity === "university") return "Établissement scolaire";
+  if (amenity === "hospital" || amenity === "clinic") return "Établissement de soins";
+  if (healthcare === "hospital" || healthcare === "clinic") return "Établissement de soins";
   return "Établissement particulier";
 }
 
@@ -1629,8 +1732,8 @@ function buildEtablissementsGeoJSON(data) {
 
   (data.elements || []).forEach(function(element) {
     const tags = element.tags || {};
-    const lat = element.lat || (element.center && element.center.lat);
-    const lon = element.lon || (element.center && element.center.lon);
+    const lat = typeof element.lat === "number" ? element.lat : (element.center && element.center.lat);
+    const lon = typeof element.lon === "number" ? element.lon : (element.center && element.center.lon);
 
     if (typeof lat !== "number" || typeof lon !== "number") {
       return;
@@ -1638,7 +1741,7 @@ function buildEtablissementsGeoJSON(data) {
 
     const name = tags.name || "Établissement sans nom";
     const typeLabel = getAmenityLabel(tags);
-    const key = lat.toFixed(6) + "|" + lon.toFixed(6) + "|" + name;
+    const key = String(element.type || "") + "|" + String(element.id || "") + "|" + lat.toFixed(6) + "|" + lon.toFixed(6);
 
     if (seen.has(key)) {
       return;
@@ -1652,8 +1755,11 @@ function buildEtablissementsGeoJSON(data) {
         coordinates: [lon, lat]
       },
       properties: {
+        id: element.id || "",
         name: name,
-        typeLabel: typeLabel
+        typeLabel: typeLabel,
+        amenity: tags.amenity || "",
+        healthcare: tags.healthcare || ""
       }
     });
   });
@@ -1664,69 +1770,135 @@ function buildEtablissementsGeoJSON(data) {
   };
 }
 
+function getCurrentBboxInfo() {
+  const bounds = map.getBounds();
+
+  const westRaw = bounds.getWest();
+  const eastRaw = bounds.getEast();
+  const southRaw = bounds.getSouth();
+  const northRaw = bounds.getNorth();
+
+  const west = Math.min(westRaw, eastRaw);
+  const east = Math.max(westRaw, eastRaw);
+  const south = Math.min(southRaw, northRaw);
+  const north = Math.max(southRaw, northRaw);
+
+  return {
+    west: west,
+    east: east,
+    south: south,
+    north: north,
+    area: Math.abs(east - west) * Math.abs(north - south),
+    overpassBbox: south + "," + west + "," + north + "," + east
+  };
+}
+
+function getCurrentBboxArea() {
+  return getCurrentBboxInfo().area;
+}
+
+async function fetchOverpassJson(overpassQuery) {
+  const response = await fetch(OVERPASS_API_URL, {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+    },
+    body: "data=" + encodeURIComponent(overpassQuery)
+  });
+
+  if (!response.ok) {
+    throw new Error("Erreur Overpass HTTP " + response.status);
+  }
+
+  return await response.json();
+}
+
 async function loadEtablissements() {
   if (!chkEtablissements.checked) {
+    setEtablissementsStatus("");
     await clearEtablissements();
     return;
   }
 
   if (etablissementsLoading) {
+    setEtablissementsStatus("Recherche déjà en cours...", "loading");
+    return;
+  }
+
+  const bbox = getCurrentBboxInfo();
+
+  if (bbox.area > MAX_ETABLISSEMENTS_BBOX_AREA) {
+    etablissementsData = {
+      type: "FeatureCollection",
+      features: []
+    };
+    await refreshVisualLayers();
+    setEtablissementsStatus("Zone trop grande. Zoomez davantage.", "warn");
+    setStatus("Zoomez davantage pour afficher les établissements particuliers.");
     return;
   }
 
   etablissementsLoading = true;
   const requestId = ++etablissementsRequestId;
+  setEtablissementsStatus("Recherche en cours...", "loading");
+  setStatus("Recherche des établissements particuliers...");
 
-  const bounds = map.getBounds();
-  const south = bounds.getSouth();
-  const west = bounds.getWest();
-  const north = bounds.getNorth();
-  const east = bounds.getEast();
+  const bboxStr = bbox.overpassBbox;
 
   const overpassQuery = `
-[out:json][timeout:25];
+[out:json][timeout:${OVERPASS_TIMEOUT_SECONDS}];
 (
-  nwr["amenity"="kindergarten"](${south},${west},${north},${east});
-  nwr["amenity"="school"](${south},${west},${north},${east});
-  nwr["amenity"="college"](${south},${west},${north},${east});
-  nwr["amenity"="hospital"](${south},${west},${north},${east});
-  nwr["amenity"="clinic"](${south},${west},${north},${east});
-  nwr["healthcare"="hospital"](${south},${west},${north},${east});
-  nwr["healthcare"="clinic"](${south},${west},${north},${east});
+  node["amenity"~"^(kindergarten|childcare|school|college|university|hospital|clinic)$"](${bboxStr});
+  way["amenity"~"^(kindergarten|childcare|school|college|university|hospital|clinic)$"](${bboxStr});
+  relation["amenity"~"^(kindergarten|childcare|school|college|university|hospital|clinic)$"](${bboxStr});
+  node["healthcare"~"^(hospital|clinic)$"](${bboxStr});
+  way["healthcare"~"^(hospital|clinic)$"](${bboxStr});
+  relation["healthcare"~"^(hospital|clinic)$"](${bboxStr});
 );
 out center;
 `;
 
   try {
-    const response = await fetch(
-      "https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(overpassQuery),
-      {
-        headers: {
-          "Accept": "application/json"
-        }
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Erreur Overpass");
-    }
-
-    const data = await response.json();
+    const data = await fetchOverpassJson(overpassQuery);
 
     if (!chkEtablissements.checked || requestId !== etablissementsRequestId) {
-      etablissementsLoading = false;
       return;
     }
 
     etablissementsData = buildEtablissementsGeoJSON(data);
     await refreshVisualLayers();
-    setStatus("Repérage des établissements particuliers mis à jour.");
+
+    const source = map.getSource(ETAB_SOURCE_ID);
+    if (source) {
+      source.setData(etablissementsData);
+    }
+
+    bringEtablissementsLayerToFront();
+
+    const count = etablissementsData.features.length;
+    setEtablissementsStatus(
+      count > 0
+        ? count + " établissement(s) affiché(s)."
+        : "Aucun établissement trouvé.",
+      count > 0 ? "ok" : "warn"
+    );
+    setStatus(
+      count > 0
+        ? "Établissements particuliers affichés : " + count + "."
+        : "Aucun établissement particulier trouvé dans l'emprise visible."
+    );
   } catch (error) {
-    if (chkEtablissements.checked) {
-      setStatus("Mise à jour impossible, affichage précédent conservé.");
+    console.error("Erreur établissements particuliers :", error);
+
+    if (chkEtablissements.checked && requestId === etablissementsRequestId) {
+      setEtablissementsStatus("Recherche impossible.", "err");
+      setStatus("Recherche des établissements impossible : " + error.message);
     }
   } finally {
-    etablissementsLoading = false;
+    if (requestId === etablissementsRequestId) {
+      etablissementsLoading = false;
+    }
   }
 }
 
@@ -1738,6 +1910,8 @@ function scheduleLoadEtablissements() {
   if (etablissementsFetchTimer) {
     clearTimeout(etablissementsFetchTimer);
   }
+
+  setEtablissementsStatus("Mise à jour en attente...", "loading");
 
   etablissementsFetchTimer = setTimeout(function() {
     loadEtablissements();
@@ -1833,6 +2007,8 @@ async function ensureAntennesLayer() {
       "visibility",
       antennasVisible ? "visible" : "none"
     );
+
+    bringEtablissementsLayerToFront();
   } catch (error) {
     setStatus("Impossible d'activer l'affichage des supports ANFR.");
   }
@@ -2046,30 +2222,6 @@ map.on("moveend", function() {
 });
 
 map.on("click", async function(e) {
-  const antennaFeatures = map.getLayer(ANFR_LAYER_ID)
-    ? map.queryRenderedFeatures(e.point, { layers: [ANFR_LAYER_ID] })
-    : [];
-
-  if (antennaFeatures.length > 0) {
-    const feature = antennaFeatures[0];
-    const coords = feature.geometry.coordinates.slice();
-    const supId = feature.properties && feature.properties.SUP_ID ? feature.properties.SUP_ID : "";
-
-    new maplibregl.Popup({ closeButton: true })
-      .setLngLat(coords)
-      .setHTML(
-        "<strong>Support ANFR</strong><br>" +
-        "SUP_ID : " + escapeHtml(supId) +
-        "<br><a href='https://www.cartoradio.fr/#/cartographie/lonlat/" +
-        coords[0] +
-        "/" +
-        coords[1] +
-        "' target='_blank' rel='noopener'>Ouvrir Cartoradio</a>"
-      )
-      .addTo(map);
-    return;
-  }
-
   const etabFeatures = map.getLayer(ETAB_LAYER_ID)
     ? map.queryRenderedFeatures(e.point, { layers: [ETAB_LAYER_ID] })
     : [];
@@ -2085,6 +2237,37 @@ map.on("click", async function(e) {
       .setHTML(
         "<strong>" + escapeHtml(name) + "</strong><br>" +
         escapeHtml(typeLabel)
+      )
+      .addTo(map);
+    return;
+  }
+
+  const antennaFeatures = map.getLayer(ANFR_LAYER_ID)
+    ? map.queryRenderedFeatures(e.point, { layers: [ANFR_LAYER_ID] })
+    : [];
+
+  if (antennaFeatures.length > 0) {
+    const feature = antennaFeatures[0];
+    const coords = feature.geometry.coordinates.slice();
+    const supId = feature.properties && feature.properties.SUP_ID ? feature.properties.SUP_ID : "";
+    const supportHeight = feature.properties && feature.properties.SUP_NM_HAUT !== undefined
+      ? normalizeNumber(feature.properties.SUP_NM_HAUT)
+      : null;
+    const supportHeightText = supportHeight !== null
+      ? formatAltitude(supportHeight)
+      : "non disponible";
+
+    new maplibregl.Popup({ closeButton: true })
+      .setLngLat(coords)
+      .setHTML(
+        "<strong>Support ANFR</strong><br>" +
+        "SUP_ID : " + escapeHtml(supId) +
+        "<br>Hauteur du support : " + escapeHtml(supportHeightText) +
+        "<br><a href='https://www.cartoradio.fr/#/cartographie/lonlat/" +
+        coords[0] +
+        "/" +
+        coords[1] +
+        "' target='_blank' rel='noopener'>Ouvrir Cartoradio</a>"
       )
       .addTo(map);
     return;
@@ -2118,12 +2301,14 @@ map.on("mousemove", function(e) {
 
 chkEtablissements.addEventListener("change", async function() {
   if (chkEtablissements.checked) {
+    setEtablissementsStatus("Recherche en cours...", "loading");
     await loadEtablissements();
   } else {
     if (etablissementsFetchTimer) {
       clearTimeout(etablissementsFetchTimer);
     }
     etablissementsRequestId++;
+    setEtablissementsStatus("");
     await clearEtablissements();
     setStatus("Repérage des établissements particuliers masqué.");
   }
@@ -2145,10 +2330,43 @@ chkAltitudeIgn.addEventListener("change", function() {
   }
 });
 
-document.getElementById("btnCarte").addEventListener("click", geocodeAddress);
+[
+  adresseInput,
+  rayonInput,
+  axisAzimuthInput,
+  axisTiltInput,
+  hmaValueInput,
+  pt1HeightInput,
+  groundAltPt1Input,
+  groundAltPt2Input
+].forEach(function(el) {
+  el.classList.add("input-cell");
+});
+
+document.getElementById("btnCarte").addEventListener("click", function() {
+  clearTimeout(addressSearchTimer);
+  geocodeAddress();
+});
+
+adresseInput.addEventListener("input", function() {
+  const address = adresseInput.value.trim();
+
+  clearTimeout(addressSearchTimer);
+
+  if (address.length < MIN_ADDRESS_LENGTH) {
+    clearAddressResults();
+    return;
+  }
+
+  addressSearchTimer = setTimeout(function() {
+    geocodeAddress();
+  }, ADDRESS_AUTOCOMPLETE_DELAY_MS);
+});
 
 adresseInput.addEventListener("keydown", function(event) {
   if (event.key === "Enter") {
+    event.preventDefault();
+    clearTimeout(addressSearchTimer);
     geocodeAddress();
   }
 });
