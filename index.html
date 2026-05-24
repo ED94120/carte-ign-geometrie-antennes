@@ -340,6 +340,7 @@ button:disabled {
       <span>Repérage des établissements particuliers</span>
     </label>
     <span id="etablissementsStatus" class="inline-status"></span>
+    <span id="antennaAxisWarningTop" class="inline-status warn"></span>
   </div>
 
   <div class="antenna-box">
@@ -471,6 +472,7 @@ button:disabled {
   </div>
 
   <div class="status" id="status"></div>
+  <div class="status warn" id="antennaAxisWarningBottom"></div>
 </div>
 
 <script>
@@ -558,9 +560,11 @@ const OVERPASS_TIMEOUT_SECONDS = 25;
 const adresseInput = document.getElementById("adresse");
 const rayonInput = document.getElementById("rayon");
 const statusEl = document.getElementById("status");
+const antennaAxisWarningBottomEl = document.getElementById("antennaAxisWarningBottom");
 const resultatsAdressesEl = document.getElementById("resultatsAdresses");
 const chkEtablissements = document.getElementById("chkEtablissements");
 const etablissementsStatusEl = document.getElementById("etablissementsStatus");
+const antennaAxisWarningTopEl = document.getElementById("antennaAxisWarningTop");
 const btnCartoradio = document.getElementById("btnCartoradio");
 const btnAntennes = document.getElementById("btnAntennes");
 
@@ -611,6 +615,19 @@ function setEtablissementsStatus(message, state = "") {
   }
 
   etablissementsStatusEl.textContent = message;
+}
+
+function setAntennaAxisWarning(isBehindAxis) {
+  if (isBehindAxis) {
+    antennaAxisWarningTopEl.textContent =
+      "Attention, le point de calcul est derrière l'axe de l'antenne.";
+
+    antennaAxisWarningBottomEl.textContent =
+      "Attention, le point de calcul est derrière l'axe de l'antenne. Le déport en élévation est calculé avec une projection axiale arrière.";
+  } else {
+    antennaAxisWarningTopEl.textContent = "";
+    antennaAxisWarningBottomEl.textContent = "";
+  }
 }
 
 function updateCartoradioButtonState() {
@@ -909,6 +926,8 @@ function computeAntennaAxisCalculations() {
   );
 
   const projectedDistance = horizontalDistance * Math.cos(azimuthOffset * Math.PI / 180);
+  const pointBehindAxis = projectedDistance < 0;
+
   const realVerticalAngle = Math.atan2(usefulDeltaAltitude, projectedDistance) * 180 / Math.PI;
   const elevationOffset = realVerticalAngle - inputs.axisTilt;
 
@@ -919,7 +938,8 @@ function computeAntennaAxisCalculations() {
     usefulDeltaAltitude: usefulDeltaAltitude,
     distance3D: distance3D,
     azimuthOffset: azimuthOffset,
-    elevationOffset: elevationOffset
+    elevationOffset: elevationOffset,
+    pointBehindAxis: pointBehindAxis
   };
 }
 
@@ -1105,12 +1125,16 @@ function updateInfoCards() {
       segmentDistance3DEl.textContent = formatDistance(antennaCalc.distance3D);
       segmentAzimuthOffsetEl.textContent = formatSignedAngle(antennaCalc.azimuthOffset);
       segmentElevationOffsetEl.textContent = formatSignedAngle(antennaCalc.elevationOffset);
+
+      setAntennaAxisWarning(antennaCalc.pointBehindAxis);
     } else {
       segmentGroundDeltaAltEl.textContent = "-";
       segmentUsefulDeltaAltEl.textContent = "-";
       segmentDistance3DEl.textContent = "-";
       segmentAzimuthOffsetEl.textContent = "-";
       segmentElevationOffsetEl.textContent = "-";
+
+      setAntennaAxisWarning(false);
     }
   } else {
     segmentLengthEl.textContent = "-";
@@ -1120,6 +1144,8 @@ function updateInfoCards() {
     segmentDistance3DEl.textContent = "-";
     segmentAzimuthOffsetEl.textContent = "-";
     segmentElevationOffsetEl.textContent = "-";
+
+    setAntennaAxisWarning(false);
   }
 
   if (circleInfo && circleInfo.radius) {
