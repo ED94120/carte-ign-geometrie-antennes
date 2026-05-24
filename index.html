@@ -488,6 +488,9 @@ button:disabled {
         <button class="small-btn" id="copyDistance3DFF" type="button">Copier D FF (3D)</button>
         <button class="small-btn" id="copyDistance3DFO" type="button">Copier D FO (3D)</button>
         <button class="small-btn" id="copyAzimuthOffset" type="button">Copier Déport az</button>
+      </div>
+      
+      <div class="info-actions">
         <button class="small-btn" id="copyElevationOffsetBF" type="button">Copier Déport BF</button>
         <button class="small-btn" id="copyElevationOffsetMF" type="button">Copier Déport MF</button>
         <button class="small-btn" id="copyElevationOffsetHF" type="button">Copier Déport HF</button>
@@ -649,6 +652,12 @@ function setStatus(message) {
   statusEl.textContent = message;
 }
 
+function clearStatusIfCurrent(message) {
+  if (statusEl.textContent === message) {
+    statusEl.textContent = "";
+  }
+}
+  
 function setEtablissementsStatus(message, state = "") {
   etablissementsStatusEl.className = "inline-status";
 
@@ -1313,6 +1322,11 @@ function enrichPointAltitude(pointName) {
       }
 
       updateInfoCards();
+
+      clearStatusIfCurrent("Point 1 enregistré. Altitude IGN du sol en cours...");
+      clearStatusIfCurrent("Point 2 enregistré. Altitude IGN du sol en cours...");
+      clearStatusIfCurrent("Nouvelle mesure. Point 1 enregistré. Altitude IGN du sol en cours...");
+      
     })
     .catch(function() {
       const currentPoint = pointName === "point1" ? point1 : point2;
