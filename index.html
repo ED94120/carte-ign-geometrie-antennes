@@ -685,6 +685,8 @@ const COPIED_VALUES_STORAGE_KEY = "antennaCopiedValues";
 
 function saveCopiedValuesFromCalculation(antennaCalc) {
   const values = {
+    savedAt: new Date().toISOString(),
+    
     distance3DFF: antennaCalc.distance3DFF,
     distance3DFO: antennaCalc.distance3DFO,
     azimuthOffset: antennaCalc.azimuthOffset,
