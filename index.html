@@ -684,9 +684,10 @@ function setAntennaAxisWarning(isBehindAxis) {
 const COPIED_VALUES_STORAGE_KEY = "antennaCopiedValues";
 
 function saveCopiedValuesFromCalculation(antennaCalc) {
+  const savedAt = new Date().toISOString();
+
   const values = {
-    savedAt: new Date().toISOString(),
-    
+    savedAt: savedAt,
     distance3DFF: antennaCalc.distance3DFF,
     distance3DFO: antennaCalc.distance3DFO,
     azimuthOffset: antennaCalc.azimuthOffset,
@@ -701,7 +702,17 @@ function saveCopiedValuesFromCalculation(antennaCalc) {
   try {
     localStorage.setItem(COPIED_VALUES_STORAGE_KEY, JSON.stringify(values));
   } catch (error) {
-    console.warn("Sauvegarde locale impossible :", error);
+    console.warn("Sauvegarde locale iframe impossible :", error);
+  }
+
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage(
+      {
+        type: "ANTENNA_COPIED_VALUES",
+        payload: values
+      },
+      "*"
+    );
   }
 }
 
