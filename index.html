@@ -681,6 +681,46 @@ function setAntennaAxisWarning(isBehindAxis) {
   }
 }
 
+const COPIED_VALUES_STORAGE_KEY = "antennaCopiedValues";
+
+function saveCopiedValuesFromCalculation(antennaCalc) {
+  const values = {
+    distance3DFF: antennaCalc.distance3DFF,
+    distance3DFO: antennaCalc.distance3DFO,
+    azimuthOffset: antennaCalc.azimuthOffset,
+    elevationOffsetBF: antennaCalc.elevationOffsetBF,
+    elevationOffsetMF: antennaCalc.elevationOffsetMF,
+    elevationOffsetHF: antennaCalc.elevationOffsetHF,
+    elevationOffset3500: antennaCalc.elevationOffset3500
+  };
+
+  window.antennaCopiedValues = values;
+
+  try {
+    localStorage.setItem(COPIED_VALUES_STORAGE_KEY, JSON.stringify(values));
+  } catch (error) {
+    console.warn("Sauvegarde locale impossible :", error);
+  }
+}
+
+function loadCopiedValuesFromLocalStorage() {
+  try {
+    const text = localStorage.getItem(COPIED_VALUES_STORAGE_KEY);
+
+    if (!text) {
+      window.antennaCopiedValues = null;
+      return;
+    }
+
+    window.antennaCopiedValues = JSON.parse(text);
+  } catch (error) {
+    window.antennaCopiedValues = null;
+    console.warn("Lecture locale impossible :", error);
+  }
+}
+
+loadCopiedValuesFromLocalStorage();
+  
 function updateCartoradioButtonState() {
   btnCartoradio.disabled = !lastClickedLatLng;
 }
@@ -1208,6 +1248,8 @@ function updateInfoCards() {
       segmentElevationOffsetMFEl.textContent = formatSignedAngle(antennaCalc.elevationOffsetMF);
       segmentElevationOffsetHFEl.textContent = formatSignedAngle(antennaCalc.elevationOffsetHF);
       segmentElevationOffset3500El.textContent = formatSignedAngle(antennaCalc.elevationOffset3500);
+
+      saveCopiedValuesFromCalculation(antennaCalc);
 
       setAntennaAxisWarning(antennaCalc.pointBehindAxis);
     } else {
