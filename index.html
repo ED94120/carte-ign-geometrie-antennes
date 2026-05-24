@@ -277,7 +277,8 @@ button:disabled {
   padding: 0 10px;
 }
 
-#copyDistance3D {
+#copyDistance3DFF,
+#copyDistance3DFO {
   color: #8a2be2;
 }
 
@@ -285,7 +286,10 @@ button:disabled {
   color: #006400;
 }
 
-#copyElevationOffset {
+#copyElevationOffsetBF,
+#copyElevationOffsetMF,
+#copyElevationOffsetHF,
+#copyElevationOffset3500 {
   color: #8b4513;
 }
 
@@ -344,27 +348,47 @@ button:disabled {
   </div>
 
   <div class="antenna-box">
-    <h3>Calcul des déports à l'axe de l'antenne</h3>
+    <h3>Calcul des déports à l'axe des antennes</h3>
 
     <div class="antenna-grid">
       <div class="antenna-field">
-        <label for="axisAzimuth">Azimut de l'axe (degrés)</label>
+        <label for="axisAzimuth">Azimut des axes (°)</label>
         <input type="text" id="axisAzimuth" placeholder="Ex : 120">
       </div>
 
       <div class="antenna-field">
-        <label for="axisTilt">Tilt de l'axe (degrés)</label>
-        <input type="text" id="axisTilt" placeholder="Ex : 4">
+        <label for="hmaFF">Hauteur à mi-antenne FF (m)</label>
+        <input type="text" id="hmaFF" placeholder="Ex : 18">
       </div>
 
       <div class="antenna-field">
-        <label for="hmaValue">Hauteur à mi-antenne HMA (m)</label>
-        <input type="text" id="hmaValue" placeholder="Ex : 18">
+        <label for="hmaFO">Hauteur à mi-antenne FO (m)</label>
+        <input type="text" id="hmaFO" placeholder="Ex : 20">
       </div>
 
       <div class="antenna-field">
         <label for="pt1Height">Hauteur du Point 1 (m)</label>
         <input type="text" id="pt1Height" placeholder="Ex : 1,5">
+      </div>
+
+      <div class="antenna-field">
+        <label for="axisTiltBF">Tilt de l'axe de la bande BF (°)</label>
+        <input type="text" id="axisTiltBF" placeholder="Ex : 4">
+      </div>
+
+      <div class="antenna-field">
+        <label for="axisTiltMF">Tilt de l'axe de la bande MF (°)</label>
+        <input type="text" id="axisTiltMF" placeholder="Ex : 4">
+      </div>
+
+      <div class="antenna-field">
+        <label for="axisTiltHF">Tilt de l'axe de la bande HF (°)</label>
+        <input type="text" id="axisTiltHF" placeholder="Ex : 4">
+      </div>
+
+      <div class="antenna-field">
+        <label for="axisTilt3500">Tilt de l'axe de la bande 3500 MHz (°)</label>
+        <input type="text" id="axisTilt3500" placeholder="Ex : 4">
       </div>
 
       <div class="antenna-field">
@@ -447,18 +471,27 @@ button:disabled {
     </div>
 
     <div class="info-card">
-      <h3>Segment PT2 vers PT1</h3>
+      <h3>Segment PT2 (antenne) vers PT1 (point de calcul)</h3>
       <div class="info-line">Longueur horizontale : <span class="value" id="segmentLength">-</span></div>
       <div class="info-line">Azimut PT2 vers PT1 : <span class="value" id="segmentAzimuth">-</span></div>
       <div class="info-line">Hauteur relative au sol (PT2 - PT1) : <span class="value" id="segmentGroundDeltaAlt">-</span></div>
-      <div class="info-line">Différence d'altitude (Antenne - Point de calcul) : <span class="value" id="segmentUsefulDeltaAlt">-</span></div>
-      <div class="info-line">Distance à vol d'oiseau : <span class="value" id="segmentDistance3D">-</span></div>
+      <div class="info-line">Différence d'altitude FF (Antenne FF - Point de calcul) : <span class="value" id="segmentUsefulDeltaAltFF">-</span></div>
+      <div class="info-line">Différence d'altitude FO (Antenne FO - Point de calcul) : <span class="value" id="segmentUsefulDeltaAltFO">-</span></div>
+      <div class="info-line">Distance à vol d'oiseau FF : <span class="value" id="segmentDistance3DFF">-</span></div>
+      <div class="info-line">Distance à vol d'oiseau FO : <span class="value" id="segmentDistance3DFO">-</span></div>
       <div class="info-line">Déport azimutal à l'axe : <span class="value" id="segmentAzimuthOffset">-</span></div>
-      <div class="info-line">Déport en élévation à l'axe : <span class="value" id="segmentElevationOffset">-</span></div>
+      <div class="info-line">Déport en élévation à l'axe, Bande BF : <span class="value" id="segmentElevationOffsetBF">-</span></div>
+      <div class="info-line">Déport en élévation à l'axe, Bande MF : <span class="value" id="segmentElevationOffsetMF">-</span></div>
+      <div class="info-line">Déport en élévation à l'axe, Bande HF : <span class="value" id="segmentElevationOffsetHF">-</span></div>
+      <div class="info-line">Déport en élévation à l'axe, Bande 3500 MHz : <span class="value" id="segmentElevationOffset3500">-</span></div>
       <div class="info-actions">
-        <button class="small-btn" id="copyDistance3D" type="button">Copier D (3D)</button>
+        <button class="small-btn" id="copyDistance3DFF" type="button">Copier D FF (3D)</button>
+        <button class="small-btn" id="copyDistance3DFO" type="button">Copier D FO (3D)</button>
         <button class="small-btn" id="copyAzimuthOffset" type="button">Copier Déport az</button>
-        <button class="small-btn" id="copyElevationOffset" type="button">Copier Déport élev.</button>
+        <button class="small-btn" id="copyElevationOffsetBF" type="button">Copier Déport BF</button>
+        <button class="small-btn" id="copyElevationOffsetMF" type="button">Copier Déport MF</button>
+        <button class="small-btn" id="copyElevationOffsetHF" type="button">Copier Déport HF</button>
+        <button class="small-btn" id="copyElevationOffset3500" type="button">Copier Déport 3500</button>
       </div>
     </div>
 
@@ -569,9 +602,13 @@ const btnCartoradio = document.getElementById("btnCartoradio");
 const btnAntennes = document.getElementById("btnAntennes");
 
 const axisAzimuthInput = document.getElementById("axisAzimuth");
-const axisTiltInput = document.getElementById("axisTilt");
-const hmaValueInput = document.getElementById("hmaValue");
+const hmaFFInput = document.getElementById("hmaFF");
+const hmaFOInput = document.getElementById("hmaFO");
 const pt1HeightInput = document.getElementById("pt1Height");
+const axisTiltBFInput = document.getElementById("axisTiltBF");
+const axisTiltMFInput = document.getElementById("axisTiltMF");
+const axisTiltHFInput = document.getElementById("axisTiltHF");
+const axisTilt3500Input = document.getElementById("axisTilt3500");
 const groundAltPt1Input = document.getElementById("groundAltPt1");
 const groundAltPt2Input = document.getElementById("groundAltPt2");
 const chkAltitudeIgn = document.getElementById("chkAltitudeIgn");
@@ -593,10 +630,15 @@ const altUsed2El = document.getElementById("altUsed2");
 const segmentLengthEl = document.getElementById("segmentLength");
 const segmentAzimuthEl = document.getElementById("segmentAzimuth");
 const segmentGroundDeltaAltEl = document.getElementById("segmentGroundDeltaAlt");
-const segmentUsefulDeltaAltEl = document.getElementById("segmentUsefulDeltaAlt");
-const segmentDistance3DEl = document.getElementById("segmentDistance3D");
+const segmentUsefulDeltaAltFFEl = document.getElementById("segmentUsefulDeltaAltFF");
+const segmentUsefulDeltaAltFOEl = document.getElementById("segmentUsefulDeltaAltFO");
+const segmentDistance3DFFEl = document.getElementById("segmentDistance3DFF");
+const segmentDistance3DFOEl = document.getElementById("segmentDistance3DFO");
 const segmentAzimuthOffsetEl = document.getElementById("segmentAzimuthOffset");
-const segmentElevationOffsetEl = document.getElementById("segmentElevationOffset");
+const segmentElevationOffsetBFEl = document.getElementById("segmentElevationOffsetBF");
+const segmentElevationOffsetMFEl = document.getElementById("segmentElevationOffsetMF");
+const segmentElevationOffsetHFEl = document.getElementById("segmentElevationOffsetHF");
+const segmentElevationOffset3500El = document.getElementById("segmentElevationOffset3500");
 
 const circleLatEl = document.getElementById("circleLat");
 const circleLngEl = document.getElementById("circleLng");
@@ -620,10 +662,10 @@ function setEtablissementsStatus(message, state = "") {
 function setAntennaAxisWarning(isBehindAxis) {
   if (isBehindAxis) {
     antennaAxisWarningTopEl.textContent =
-      "Attention, le point de calcul est derrière l'axe de l'antenne.";
+      "Attention, le point de calcul est derrière l'axe des antennes.";
 
     antennaAxisWarningBottomEl.textContent =
-      "Attention, le point de calcul est derrière l'axe de l'antenne. Le déport en élévation est calculé avec une projection axiale arrière.";
+      "Attention, le point de calcul est derrière l'axe des antennes. Le déport en élévation est calculé avec une projection axiale arrière.";
   } else {
     antennaAxisWarningTopEl.textContent = "";
     antennaAxisWarningBottomEl.textContent = "";
@@ -878,9 +920,13 @@ function calculateAzimuthDegrees(fromPoint, toPoint) {
 function getAngularInputs() {
   return {
     axisAzimuth: normalizeNumber(axisAzimuthInput.value),
-    axisTilt: normalizeNumber(axisTiltInput.value),
-    hmaValue: normalizeNumber(hmaValueInput.value),
+    hmaFF: normalizeNumber(hmaFFInput.value),
+    hmaFO: normalizeNumber(hmaFOInput.value),
     pt1Height: normalizeNumber(pt1HeightInput.value),
+    axisTiltBF: normalizeNumber(axisTiltBFInput.value),
+    axisTiltMF: normalizeNumber(axisTiltMFInput.value),
+    axisTiltHF: normalizeNumber(axisTiltHFInput.value),
+    axisTilt3500: normalizeNumber(axisTilt3500Input.value),
     groundAltPt1: normalizeNumber(groundAltPt1Input.value),
     groundAltPt2: normalizeNumber(groundAltPt2Input.value)
   };
@@ -895,9 +941,13 @@ function computeAntennaAxisCalculations() {
 
   if (
     inputs.axisAzimuth === null ||
-    inputs.axisTilt === null ||
-    inputs.hmaValue === null ||
+    inputs.hmaFF === null ||
+    inputs.hmaFO === null ||
     inputs.pt1Height === null ||
+    inputs.axisTiltBF === null ||
+    inputs.axisTiltMF === null ||
+    inputs.axisTiltHF === null ||
+    inputs.axisTilt3500 === null ||
     inputs.groundAltPt1 === null ||
     inputs.groundAltPt2 === null
   ) {
@@ -916,29 +966,48 @@ function computeAntennaAxisCalculations() {
   const axisAzimuth = normalizeAzimuth360(inputs.axisAzimuth);
   const azimuthOffset = normalizeSignedAngle180(segmentAzimuth - axisAzimuth);
 
-  const antennaAltitude = inputs.groundAltPt2 + inputs.hmaValue;
   const pointAltitude = inputs.groundAltPt1 + inputs.pt1Height;
-  const usefulDeltaAltitude = antennaAltitude - pointAltitude;
 
-  const distance3D = Math.sqrt(
+  const antennaAltitudeFF = inputs.groundAltPt2 + inputs.hmaFF;
+  const antennaAltitudeFO = inputs.groundAltPt2 + inputs.hmaFO;
+
+  const usefulDeltaAltitudeFF = antennaAltitudeFF - pointAltitude;
+  const usefulDeltaAltitudeFO = antennaAltitudeFO - pointAltitude;
+
+  const distance3DFF = Math.sqrt(
     horizontalDistance * horizontalDistance +
-    usefulDeltaAltitude * usefulDeltaAltitude
+    usefulDeltaAltitudeFF * usefulDeltaAltitudeFF
+  );
+
+  const distance3DFO = Math.sqrt(
+    horizontalDistance * horizontalDistance +
+    usefulDeltaAltitudeFO * usefulDeltaAltitudeFO
   );
 
   const projectedDistance = horizontalDistance * Math.cos(azimuthOffset * Math.PI / 180);
   const pointBehindAxis = projectedDistance < 0;
 
-  const realVerticalAngle = Math.atan2(usefulDeltaAltitude, projectedDistance) * 180 / Math.PI;
-  const elevationOffset = realVerticalAngle - inputs.axisTilt;
+  const realVerticalAngleFF = Math.atan2(usefulDeltaAltitudeFF, projectedDistance) * 180 / Math.PI;
+  const realVerticalAngleFO = Math.atan2(usefulDeltaAltitudeFO, projectedDistance) * 180 / Math.PI;
+
+  const elevationOffsetBF = realVerticalAngleFF - inputs.axisTiltBF;
+  const elevationOffsetMF = realVerticalAngleFF - inputs.axisTiltMF;
+  const elevationOffsetHF = realVerticalAngleFF - inputs.axisTiltHF;
+  const elevationOffset3500 = realVerticalAngleFO - inputs.axisTilt3500;
 
   return {
     horizontalDistance: horizontalDistance,
     segmentAzimuth: segmentAzimuth,
     groundDeltaAltitude: inputs.groundAltPt2 - inputs.groundAltPt1,
-    usefulDeltaAltitude: usefulDeltaAltitude,
-    distance3D: distance3D,
+    usefulDeltaAltitudeFF: usefulDeltaAltitudeFF,
+    usefulDeltaAltitudeFO: usefulDeltaAltitudeFO,
+    distance3DFF: distance3DFF,
+    distance3DFO: distance3DFO,
     azimuthOffset: azimuthOffset,
-    elevationOffset: elevationOffset,
+    elevationOffsetBF: elevationOffsetBF,
+    elevationOffsetMF: elevationOffsetMF,
+    elevationOffsetHF: elevationOffsetHF,
+    elevationOffset3500: elevationOffset3500,
     pointBehindAxis: pointBehindAxis
   };
 }
@@ -1121,18 +1190,28 @@ function updateInfoCards() {
 
     if (antennaCalc) {
       segmentGroundDeltaAltEl.textContent = formatSignedDistance(antennaCalc.groundDeltaAltitude);
-      segmentUsefulDeltaAltEl.textContent = formatSignedDistance(antennaCalc.usefulDeltaAltitude);
-      segmentDistance3DEl.textContent = formatDistance(antennaCalc.distance3D);
+      segmentUsefulDeltaAltFFEl.textContent = formatSignedDistance(antennaCalc.usefulDeltaAltitudeFF);
+      segmentUsefulDeltaAltFOEl.textContent = formatSignedDistance(antennaCalc.usefulDeltaAltitudeFO);
+      segmentDistance3DFFEl.textContent = formatDistance(antennaCalc.distance3DFF);
+      segmentDistance3DFOEl.textContent = formatDistance(antennaCalc.distance3DFO);
       segmentAzimuthOffsetEl.textContent = formatSignedAngle(antennaCalc.azimuthOffset);
-      segmentElevationOffsetEl.textContent = formatSignedAngle(antennaCalc.elevationOffset);
+      segmentElevationOffsetBFEl.textContent = formatSignedAngle(antennaCalc.elevationOffsetBF);
+      segmentElevationOffsetMFEl.textContent = formatSignedAngle(antennaCalc.elevationOffsetMF);
+      segmentElevationOffsetHFEl.textContent = formatSignedAngle(antennaCalc.elevationOffsetHF);
+      segmentElevationOffset3500El.textContent = formatSignedAngle(antennaCalc.elevationOffset3500);
 
       setAntennaAxisWarning(antennaCalc.pointBehindAxis);
     } else {
       segmentGroundDeltaAltEl.textContent = "-";
-      segmentUsefulDeltaAltEl.textContent = "-";
-      segmentDistance3DEl.textContent = "-";
+      segmentUsefulDeltaAltFFEl.textContent = "-";
+      segmentUsefulDeltaAltFOEl.textContent = "-";
+      segmentDistance3DFFEl.textContent = "-";
+      segmentDistance3DFOEl.textContent = "-";
       segmentAzimuthOffsetEl.textContent = "-";
-      segmentElevationOffsetEl.textContent = "-";
+      segmentElevationOffsetBFEl.textContent = "-";
+      segmentElevationOffsetMFEl.textContent = "-";
+      segmentElevationOffsetHFEl.textContent = "-";
+      segmentElevationOffset3500El.textContent = "-";
 
       setAntennaAxisWarning(false);
     }
@@ -1140,10 +1219,15 @@ function updateInfoCards() {
     segmentLengthEl.textContent = "-";
     segmentAzimuthEl.textContent = "-";
     segmentGroundDeltaAltEl.textContent = "-";
-    segmentUsefulDeltaAltEl.textContent = "-";
-    segmentDistance3DEl.textContent = "-";
+    segmentUsefulDeltaAltFFEl.textContent = "-";
+    segmentUsefulDeltaAltFOEl.textContent = "-";
+    segmentDistance3DFFEl.textContent = "-";
+    segmentDistance3DFOEl.textContent = "-";
     segmentAzimuthOffsetEl.textContent = "-";
-    segmentElevationOffsetEl.textContent = "-";
+    segmentElevationOffsetBFEl.textContent = "-";
+    segmentElevationOffsetMFEl.textContent = "-";
+    segmentElevationOffsetHFEl.textContent = "-";
+    segmentElevationOffset3500El.textContent = "-";
 
     setAntennaAxisWarning(false);
   }
@@ -2403,9 +2487,13 @@ chkAltitudeIgn.addEventListener("change", function() {
   adresseInput,
   rayonInput,
   axisAzimuthInput,
-  axisTiltInput,
-  hmaValueInput,
+  hmaFFInput,
+  hmaFOInput,
   pt1HeightInput,
+  axisTiltBFInput,
+  axisTiltMFInput,
+  axisTiltHFInput,
+  axisTilt3500Input,
   groundAltPt1Input,
   groundAltPt2Input
 ].forEach(function(el) {
@@ -2479,23 +2567,43 @@ document.getElementById("copyUtmY2").addEventListener("click", function() {
   copyNumericText(utmY2El.textContent, "Y du point 2");
 });
 
-document.getElementById("copyDistance3D").addEventListener("click", function() {
-  copyNumericText(segmentDistance3DEl.textContent, "Distance 3D");
+document.getElementById("copyDistance3DFF").addEventListener("click", function() {
+  copyNumericText(segmentDistance3DFFEl.textContent, "Distance 3D FF");
+});
+
+document.getElementById("copyDistance3DFO").addEventListener("click", function() {
+  copyNumericText(segmentDistance3DFOEl.textContent, "Distance 3D FO");
 });
 
 document.getElementById("copyAzimuthOffset").addEventListener("click", function() {
   copyNumericText(segmentAzimuthOffsetEl.textContent, "Déport azimutal");
 });
 
-document.getElementById("copyElevationOffset").addEventListener("click", function() {
-  copyNumericText(segmentElevationOffsetEl.textContent, "Déport en élévation");
+document.getElementById("copyElevationOffsetBF").addEventListener("click", function() {
+  copyNumericText(segmentElevationOffsetBFEl.textContent, "Déport en élévation BF");
+});
+
+document.getElementById("copyElevationOffsetMF").addEventListener("click", function() {
+  copyNumericText(segmentElevationOffsetMFEl.textContent, "Déport en élévation MF");
+});
+
+document.getElementById("copyElevationOffsetHF").addEventListener("click", function() {
+  copyNumericText(segmentElevationOffsetHFEl.textContent, "Déport en élévation HF");
+});
+
+document.getElementById("copyElevationOffset3500").addEventListener("click", function() {
+  copyNumericText(segmentElevationOffset3500El.textContent, "Déport en élévation 3500 MHz");
 });
 
 [
   axisAzimuthInput,
-  axisTiltInput,
-  hmaValueInput,
+  hmaFFInput,
+  hmaFOInput,
   pt1HeightInput,
+  axisTiltBFInput,
+  axisTiltMFInput,
+  axisTiltHFInput,
+  axisTilt3500Input,
   groundAltPt1Input,
   groundAltPt2Input
 ].forEach(function(input) {
