@@ -707,15 +707,25 @@ function saveCopiedValuesFromCalculation(antennaCalc) {
     console.warn("Sauvegarde locale iframe impossible :", error);
   }
 
+  try {
+  const message = {
+    type: "ANTENNA_COPIED_VALUES",
+    payload: values
+  };
+
   if (window.parent && window.parent !== window) {
-    window.parent.postMessage(
-      {
-        type: "ANTENNA_COPIED_VALUES",
-        payload: values
-      },
-      "*"
-    );
+    window.parent.postMessage(message, "*");
   }
+
+  if (window.top && window.top !== window && window.top !== window.parent) {
+    window.top.postMessage(message, "*");
+  }
+
+  console.log("Déports envoyés à la page parente :", message);
+
+} catch (error) {
+  console.warn("Envoi des déports à la page parente impossible :", error);
+}
 }
 
 function loadCopiedValuesFromLocalStorage() {
